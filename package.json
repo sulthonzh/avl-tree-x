@@ -1,0 +1,15 @@
+{
+  "name": "avl-tree-x",
+  "version": "1.0.0",
+  "description": "Zero-dep AVL self-balancing binary search tree. Insert/delete/search in O(log n), range queries, rank, select, traversals, serialization.",
+  "main": "src/index.js",
+  "bin": {
+    "avltree": "src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test test/test.js"
+  },
+  "keywords": ["avl", "tree", "bst", "balanced", "self-balancing", "data-structure", "algorithm"],
+  "license": "MIT",
+  "author": "sulthonzh"
+}
