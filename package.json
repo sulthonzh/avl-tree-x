@@ -1,15 +1,44 @@
 {
   "name": "avl-tree-x",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Zero-dep AVL self-balancing binary search tree. Insert/delete/search in O(log n), range queries, rank, select, traversals, serialization.",
   "main": "src/index.js",
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "avltree": "src/cli.js"
   },
+  "files": [
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "node --test test/test.js"
+    "test": "node --test test/test.js",
+    "test:core": "node --test test/test.js"
   },
-  "keywords": ["avl", "tree", "bst", "balanced", "self-balancing", "data-structure", "algorithm"],
+  "keywords": [
+    "avl",
+    "tree",
+    "bst",
+    "balanced",
+    "self-balancing",
+    "data-structure",
+    "algorithm",
+    "binary-search-tree",
+    "range-query",
+    "rank",
+    "select"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "license": "MIT",
   "author": "sulthonzh"
 }

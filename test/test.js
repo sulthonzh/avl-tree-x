@@ -375,3 +375,287 @@ describe('AVLTree — Stress Test', () => {
     assert.deepEqual(t.toArray(), Array.from({ length: 50 }, (_, i) => i));
   });
 });
+
+describe('AVLTree — fromJSON edge cases', () => {
+  it('rejects null input', () => {
+    assert.throws(() => AVLTree.fromJSON(null), TypeError);
+  });
+
+  it('rejects non-object input', () => {
+    assert.throws(() => AVLTree.fromJSON('not an object'), TypeError);
+    assert.throws(() => AVLTree.fromJSON(42), TypeError);
+  });
+
+  it('handles empty/null root', () => {
+    const t = AVLTree.fromJSON({ root: null, size: 0 });
+    assert.equal(t.size, 0);
+    assert.equal(t.isEmpty(), true);
+  });
+
+  it('handles missing root field (defaults to null)', () => {
+    const t = AVLTree.fromJSON({ size: 0 });
+    assert.equal(t.size, 0);
+    assert.equal(t.isEmpty(), true);
+  });
+
+  it('recomputes size from actual tree (ignores corrupted size)', () => {
+    const original = AVLTree.from([1, 2, 3, 4, 5]);
+    const json = original.toJSON();
+    json.size = 999; // corrupt the size
+    const restored = AVLTree.fromJSON(json);
+    assert.equal(restored.size, 5); // should recompute, not trust input
+    assert.ok(restored.isValid());
+  });
+
+  it('preserves custom comparator through fromJSON', () => {
+    const cmp = (a, b) => a.localeCompare(b);
+    const original = AVLTree.from(['cherry', 'apple', 'banana'], cmp);
+    const json = original.toJSON();
+    const restored = AVLTree.fromJSON(json, cmp);
+    assert.deepEqual(restored.toArray(), ['apple', 'banana', 'cherry']);
+    assert.ok(restored.isValid());
+  });
+});
+
+describe('AVLTree — select edge cases', () => {
+  const t = AVLTree.from([10, 20, 30, 40, 50]);
+
+  it('select(NaN) returns undefined', () => {
+    assert.equal(t.select(NaN), undefined);
+  });
+
+  it('select(Infinity) returns undefined', () => {
+    assert.equal(t.select(Infinity), undefined);
+  });
+
+  it('select(non-integer) returns undefined', () => {
+    assert.equal(t.select(1.5), undefined);
+    assert.equal(t.select(-0.5), undefined);
+    assert.equal(t.select(2.999), undefined);
+  });
+
+  it('select(-0) works as 0', () => {
+    // -0 is an integer in JS (Number.isInteger(-0) === true)
+    assert.equal(t.select(-0), 10);
+  });
+});
+
+describe('AVLTree — rank edge cases', () => {
+  it('rank on empty tree returns 0', () => {
+    const t = new AVLTree();
+    assert.equal(t.rank(5), 0);
+  });
+
+  it('rank of min value is 0', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(10), 0);
+  });
+
+  it('rank of value larger than all elements', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(100), 3);
+  });
+});
+
+describe('AVLTree — rangeSearch edge cases', () => {
+  it('low > high returns empty', () => {
+    const t = AVLTree.from([1, 2, 3, 4, 5]);
+    assert.deepEqual(t.rangeSearch(10, 5), []);
+  });
+
+  it('range equal to single element', () => {
+    const t = AVLTree.from([1, 2, 3, 4, 5]);
+    assert.deepEqual(t.rangeSearch(3, 3), [3]);
+  });
+
+  it('range covering all elements', () => {
+    const t = AVLTree.from([5, 3, 7, 1, 4]);
+    assert.deepEqual(t.rangeSearch(1, 7), [1, 3, 4, 5, 7]);
+  });
+});
+
+describe('AVLTree — insertAll edge cases', () => {
+  it('insertAll with Set', () => {
+    const t = new AVLTree();
+    t.insertAll(new Set([3, 1, 4, 1, 5]));
+    assert.equal(t.size, 4); // 1, 3, 4, 5 (deduplicated by Set)
+    assert.ok(t.isValid());
+  });
+
+  it('insertAll with generator', () => {
+    function* gen() { yield 5; yield 3; yield 7; yield 1; }
+    const t = new AVLTree();
+    t.insertAll(gen());
+    assert.equal(t.size, 4);
+    assert.deepEqual(t.toArray(), [1, 3, 5, 7]);
+  });
+
+  it('insertAll with empty array', () => {
+    const t = new AVLTree();
+    t.insertAll([]);
+    assert.equal(t.size, 0);
+    assert.equal(t.isEmpty(), true);
+  });
+});
+
+describe('AVLTree — clear and reuse', () => {
+  it('clear then reinsert works correctly', () => {
+    const t = AVLTree.from([5, 3, 7, 1]);
+    t.clear();
+    assert.equal(t.size, 0);
+    assert.equal(t.isValid(), true);
+    t.insertAll([10, 20, 30]);
+    assert.equal(t.size, 3);
+    assert.ok(t.isValid());
+    assert.deepEqual(t.toArray(), [10, 20, 30]);
+  });
+
+  it('multiple clear cycles', () => {
+    const t = new AVLTree();
+    for (let cycle = 0; cycle < 5; cycle++) {
+      t.clear();
+      for (let i = 0; i < 20; i++) t.insert(Math.floor(Math.random() * 100));
+      assert.ok(t.isValid(), `cycle ${cycle} invalid`);
+    }
+  });
+});
+
+describe('AVLTree — predecessor/successor edge cases', () => {
+  it('predecessor/successor on empty tree', () => {
+    const t = new AVLTree();
+    assert.equal(t.predecessor(5), undefined);
+    assert.equal(t.successor(5), undefined);
+  });
+
+  it('predecessor/successor on single node tree', () => {
+    const t = AVLTree.from([42]);
+    assert.equal(t.predecessor(42), undefined);
+    assert.equal(t.successor(42), undefined);
+    assert.equal(t.predecessor(50), 42);
+    assert.equal(t.successor(30), 42);
+  });
+
+  it('predecessor/successor with duplicate insertions', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    t.insert(20); // duplicate replace
+    assert.equal(t.predecessor(20), 10);
+    assert.equal(t.successor(20), 30);
+  });
+});
+
+describe('AVLTree — large tree operations', () => {
+  it('1000 insertions maintain O(log n) height', () => {
+    const t = new AVLTree();
+    for (let i = 0; i < 1000; i++) t.insert(i);
+    assert.equal(t.size, 1000);
+    assert.ok(t.isValid());
+    // AVL height bound: 1.44 * log2(n+2) - 0.308
+    const maxH = Math.ceil(1.44 * Math.log2(1002));
+    assert.ok(t.height() <= maxH + 1, `height ${t.height()} > expected max ${maxH + 1}`);
+  });
+
+  it('toArray returns sorted for 500 elements', () => {
+    const vals = Array.from({ length: 500 }, () => Math.floor(Math.random() * 10000));
+    const unique = [...new Set(vals)].sort((a, b) => a - b);
+    const t = AVLTree.from(vals);
+    assert.deepEqual(t.toArray(), unique);
+  });
+});
+
+describe('AVLTree — toJSON structure', () => {
+  it('toJSON returns correct structure', () => {
+    const t = AVLTree.from([5, 3, 7]);
+    const json = t.toJSON();
+    assert.equal(json.size, 3);
+    assert.equal(typeof json.root, 'object');
+    assert.equal(json.root.h, 2); // root height after balancing
+    // Each node has v, h, l, r
+    assert.equal('v' in json.root, true);
+    assert.equal('h' in json.root, true);
+    assert.equal('l' in json.root, true);
+    assert.equal('r' in json.root, true);
+  });
+
+  it('toJSON on empty tree', () => {
+    const t = new AVLTree();
+    const json = t.toJSON();
+    assert.equal(json.root, null);
+    assert.equal(json.size, 0);
+  });
+});
+
+describe('AVLTree — custom comparator edge cases', () => {
+  it('works with Date objects', () => {
+    const t = new AVLTree((a, b) => a.getTime() - b.getTime());
+    const d1 = new Date('2024-01-01');
+    const d2 = new Date('2024-06-01');
+    const d3 = new Date('2024-03-01');
+    t.insertAll([d1, d2, d3]);
+    const sorted = t.toArray();
+    assert.equal(sorted[0], d1);
+    assert.equal(sorted[1], d3);
+    assert.equal(sorted[2], d2);
+  });
+
+  it('rangeSearch with string comparator', () => {
+    const t = new AVLTree((a, b) => a.localeCompare(b));
+    t.insertAll(['apple', 'banana', 'cherry', 'apricot', 'blueberry']);
+    // 'banana' > 'b' lexicographically, so only apple, apricot are in ['a', 'b']
+    assert.deepEqual(t.rangeSearch('a', 'b'), ['apple', 'apricot']);
+    // Use 'c' as upper bound to include banana
+    assert.deepEqual(t.rangeSearch('a', 'c'), ['apple', 'apricot', 'banana', 'blueberry']);
+  });
+});
+
+describe('AVLTree — delete edge cases', () => {
+  it('delete all elements one by one', () => {
+    const t = AVLTree.from([10, 20, 30, 40, 50, 25, 35]);
+    const initial = t.toArray();
+    for (const v of initial) {
+      t.delete(v);
+      assert.ok(t.isValid(), `invalid after deleting ${v}`);
+    }
+    assert.equal(t.size, 0);
+    assert.equal(t.isEmpty(), true);
+  });
+
+  it('delete from single element tree', () => {
+    const t = AVLTree.from([42]);
+    assert.equal(t.delete(42), true);
+    assert.equal(t.size, 0);
+    assert.equal(t.has(42), false);
+    assert.equal(t.isValid(), true);
+  });
+
+  it('delete root repeatedly (always root)', () => {
+    const t = AVLTree.from([5, 3, 7, 1, 4, 6, 8]);
+    while (!t.isEmpty()) {
+      const rootVal = t.min();
+      t.delete(rootVal);
+      assert.ok(t.isValid());
+    }
+    assert.equal(t.size, 0);
+  });
+});
+
+describe('AVLTree — iterator protocol', () => {
+  it('iterator return object has correct shape', () => {
+    const t = AVLTree.from([5, 3, 7]);
+    const iter = t[Symbol.iterator]();
+    const first = iter.next();
+    assert.equal(first.done, false);
+    assert.equal(typeof first.value, 'number');
+    iter.next();
+    iter.next();
+    const fourth = iter.next();
+    assert.equal(fourth.done, true);
+  });
+
+  it('iterator on large tree matches toArray', () => {
+    const vals = Array.from({ length: 200 }, () => Math.floor(Math.random() * 1000));
+    const t = AVLTree.from(vals);
+    const iterated = [...t];
+    const arrayed = t.toArray();
+    assert.deepEqual(iterated, arrayed);
+  });
+});

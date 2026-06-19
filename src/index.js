@@ -486,16 +486,19 @@ class AVLTree {
    * @returns {number}
    */
   rank(value) {
+    if (typeof value !== 'number' && typeof value !== 'string' && typeof value !== 'object') {
+ return 0;
+    }
     return rankNode(this._root, value, this._compare);
   }
 
   /**
    * Get the k-th smallest value (0-indexed).
    * @param {number} k
-   * @returns {*} the value, or undefined if k is out of range
+   * @returns {*} the value, or undefined if k is out of range or not an integer
    */
   select(k) {
-    if (k < 0 || k >= this._size) return undefined;
+    if (!Number.isInteger(k) || k < 0 || k >= this._size) return undefined;
     return selectNode(this._root, k);
   }
 
@@ -506,9 +509,13 @@ class AVLTree {
 
   /** Deserialize from JSON-compatible object. */
   static fromJSON(obj, compare = defaultCompare) {
+    if (obj === null || typeof obj !== 'object') {
+      throw new TypeError('fromJSON expects a plain object from toJSON()');
+    }
     const tree = new AVLTree(compare);
-    tree._root = fromJSONNode(obj.root);
-    tree._size = obj.size;
+    tree._root = fromJSONNode(obj.root || null);
+    // Recompute size from actual tree structure instead of trusting input
+    tree._size = countNodes(tree._root);
     return tree;
   }
 

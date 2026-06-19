@@ -18,12 +18,19 @@
 
 const { AVLTree } = require('./index.js');
 
+const VERSION = '1.1.0';
+
 function parseArgs(argv) {
   const args = argv.slice(2);
   if (args.length === 0) {
     console.error('Usage: avltree <command> [args] [--json]');
     console.error('Commands: insert, delete, search, range, order, rank, select, min, max, height, info, demo');
+    console.error('       avltree --version | -V');
     process.exit(1);
+  }
+  if (args[0] === '--version' || args[0] === '-V' || args[0] === 'version') {
+    console.log(VERSION);
+    process.exit(0);
   }
   const jsonFlag = args.includes('--json');
   const filtered = args.filter((a) => a !== '--json');

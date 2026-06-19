@@ -219,6 +219,81 @@ All operations are **O(log n)** worst-case:
 | rangeSearch | O(log n + k) where k = results |
 | toArray / inOrder | O(n) |
 
+## Real-World Examples
+
+### 1. Leaderboard with Rank Queries
+
+```js
+const { AVLTree } = require('avl-tree-x');
+
+// Store scores in an AVL tree for fast rank lookups
+const scores = new AVLTree();
+
+// Add player scores
+[850, 1200, 430, 990, 1500, 670, 2100, 1100].forEach((s) => scores.insert(s));
+
+// "What rank is a score of 990?"
+console.log(scores.rank(990)); // 3 (three scores below)
+
+// "What's the 3rd highest score?" (0-indexed from smallest)
+console.log(scores.select(scores.size - 3)); // 1200
+
+// "Show me all scores between 800 and 1200"
+console.log(scores.rangeSearch(800, 1200)); // [850, 990, 1100, 1200]
+```
+
+### 2. Event Scheduling (Find Next Available Slot)
+
+```js
+const { AVLTree } = require('avl-tree-x');
+
+// Store booked timestamps (Unix epoch seconds)
+const bookings = AVLTree.from([1000, 2000, 3000, 4000, 5000]);
+
+// Find the next available slot after timestamp 2500
+const next = bookings.successor(2500);
+console.log(next); // 3000
+
+// Find the last booking before 2500
+const prev = bookings.predecessor(2500);
+console.log(prev); // 2000
+```
+
+### 3. De-duplication with Order Statistics
+
+```js
+const { AVLTree } = require('avl-tree-x');
+
+// Process a stream of events, keeping only unique IDs
+const seen = new AVLTree();
+const events = [42, 17, 42, 99, 17, 55, 99, 3];
+
+for (const id of events) {
+  if (!seen.has(id)) {
+    seen.insert(id);
+    console.log(`Added ${id}, rank: ${seen.rank(id)}, total unique: ${seen.size}`);
+  }
+}
+// Final sorted unique IDs:
+console.log([...seen]); // [3, 17, 42, 55, 99]
+```
+
+## Comparison
+
+| Feature | avl-tree-x | [avl](https://www.npmjs.com/package/avl) | [bintrees](https://www.npmjs.com/package/bintrees) | [sorted-btree](https://www.npmjs.com/package/sorted-btree) |
+|---------|-----------|-----|---------|--------------|
+| Dependencies | **0** | 0 | 0 | 1 |
+| Balance type | AVL | AVL | Red-Black (unbalanced BST too) | B-tree |
+| Range queries | ✅ | ❌ | ❌ | ✅ |
+| Rank / Select | ✅ | ❌ | ❌ | ❌ |
+| Predecessor / Successor | ✅ | ✅ | ✅ | ✅ |
+| Iterator protocol | ✅ | ✅ | ❌ | ✅ |
+| Serialization | ✅ | ❌ | ❌ | ❌ |
+| Custom comparator | ✅ | ✅ | ✅ | ✅ |
+| CLI tool | ✅ | ❌ | ❌ | ❌ |
+| Tree validation | ✅ | ❌ | ❌ | ❌ |
+| Node.js >= | 18 | 4 | 0.8 | 8 |
+
 ## License
 
 MIT
