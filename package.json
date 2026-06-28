@@ -21,7 +21,9 @@
   ],
   "scripts": {
     "test": "node --test test/test.js",
-    "test:core": "node --test test/test.js"
+    "test:coverage": "c8 node --test test/test.js",
+    "lint": "eslint src/ test/",
+    "prepublishOnly": "npm test && npm run lint"
   },
   "keywords": [
     "avl",
@@ -48,5 +50,11 @@
   "homepage": "https://github.com/sulthonzh/avl-tree-x#readme",
   "bugs": {
     "url": "https://github.com/sulthonzh/avl-tree-x/issues"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "c8": "^11.0.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0"
   }
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Polish
+- Added ESLint flat config (eslint.config.mjs) with recommended rules
+- Added c8 coverage reporting (test:coverage script)
+- Added lint script, wired prepublishOnly to run tests + lint
+- Added .gitignore (node_modules/, coverage/)
+- Sharpened README hook (problem-first, not feature-first)
+
+### Coverage
+- 99.63% statements, 90% branches, 100% functions
+
 ## v1.1.0 (2026-06-19)
 
 ### Bug Fixes

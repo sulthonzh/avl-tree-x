@@ -1,8 +1,6 @@
 # avl-tree-x
 
-Zero-dependency AVL self-balancing binary search tree for Node.js.
-
-Insert, delete, and search are all **O(log n)** worst-case — guaranteed by AVL rebalancing after every modification.
+Balanced BST that doesn't degrade to a linked list. Insert, delete, and search in **O(log n)** guaranteed — with range queries, rank/select, and 85 tests proving correctness.
 
 ## Install
 
