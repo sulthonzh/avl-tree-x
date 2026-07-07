@@ -325,6 +325,39 @@ describe('AVLTree — Custom Comparator', () => {
   });
 });
 
+describe('AVLTree — traversals with callback', () => {
+  it('preOrder with callback visits nodes', () => {
+    const t = AVLTree.from([50, 25, 75, 10, 30]);
+    const visited = [];
+    t.preOrder((v) => visited.push(v));
+    assert.equal(visited.length, 5);
+    assert.equal(visited[0], 50); // root first
+  });
+
+  it('postOrder with callback visits nodes', () => {
+    const t = AVLTree.from([50, 25, 75, 10, 30]);
+    const visited = [];
+    t.postOrder((v) => visited.push(v));
+    assert.equal(visited.length, 5);
+    // post-order: children before parent
+    assert.equal(visited[visited.length - 1], 50); // root last
+  });
+
+  it('levelOrder with callback visits nodes', () => {
+    const t = AVLTree.from([50, 25, 75, 10, 30]);
+    const visited = [];
+    t.levelOrder((v) => visited.push(v));
+    assert.equal(visited.length, 5);
+    assert.equal(visited[0], 50); // root first (BFS)
+  });
+
+  it('inOrder with callback does not return array', () => {
+    const t = AVLTree.from([3, 1, 2]);
+    const result = t.inOrder((v) => {});
+    assert.equal(result, null);
+  });
+});
+
 describe('AVLTree — isValid', () => {
   it('valid for valid AVL tree', () => {
     const t = AVLTree.from([1, 2, 3, 4, 5, 6, 7]);
@@ -638,6 +671,29 @@ describe('AVLTree — delete edge cases', () => {
   });
 });
 
+describe('AVLTree — rank type guard', () => {
+  it('rank returns 0 for boolean input', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(true), 0);
+    assert.equal(t.rank(false), 0);
+  });
+
+  it('rank returns 0 for undefined input', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(undefined), 0);
+  });
+
+  it('rank returns 0 for symbol input', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(Symbol('x')), 0);
+  });
+
+  it('rank returns 0 for function input', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.rank(() => {}), 0);
+  });
+});
+
 describe('AVLTree — iterator protocol', () => {
   it('iterator return object has correct shape', () => {
     const t = AVLTree.from([5, 3, 7]);
@@ -657,5 +713,82 @@ describe('AVLTree — iterator protocol', () => {
     const iterated = [...t];
     const arrayed = t.toArray();
     assert.deepEqual(iterated, arrayed);
+  });
+
+  it('iterator on empty tree immediately done', () => {
+    const t = new AVLTree();
+    const iter = t[Symbol.iterator]();
+    assert.equal(iter.next().done, true);
+  });
+
+  it('iterator on single element tree', () => {
+    const t = AVLTree.from([42]);
+    const iter = t[Symbol.iterator]();
+    const first = iter.next();
+    assert.equal(first.value, 42);
+    assert.equal(first.done, false);
+    assert.equal(iter.next().done, true);
+  });
+});
+
+describe('AVLTree — toJSON/fromJSON round-trip with custom comparator', () => {
+  it('round-trips with string comparator', () => {
+    const t = new AVLTree((a, b) => a.localeCompare(b));
+    t.insertAll(['cherry', 'apple', 'banana', 'date']);
+    const json = t.toJSON();
+    const restored = AVLTree.fromJSON(json, (a, b) => a.localeCompare(b));
+    assert.deepEqual(restored.toArray(), ['apple', 'banana', 'cherry', 'date']);
+    assert.equal(restored.size, 4);
+  });
+
+  it('round-trips with reverse numeric comparator', () => {
+    const t = new AVLTree((a, b) => b - a);
+    t.insertAll([5, 3, 7, 1, 9]);
+    const json = t.toJSON();
+    const restored = AVLTree.fromJSON(json, (a, b) => b - a);
+    assert.deepEqual(restored.toArray(), [9, 7, 5, 3, 1]);
+    assert.equal(restored.size, 5);
+  });
+});
+
+describe('AVLTree — delete returns correct boolean', () => {
+  it('delete returns true when value exists', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.delete(20), true);
+    assert.equal(t.size, 2);
+  });
+
+  it('delete returns false when value does not exist', () => {
+    const t = AVLTree.from([10, 20, 30]);
+    assert.equal(t.delete(999), false);
+    assert.equal(t.size, 3);
+  });
+
+  it('delete returns false on empty tree', () => {
+    const t = new AVLTree();
+    assert.equal(t.delete(5), false);
+  });
+});
+
+describe('AVLTree — clear and reuse after heavy operations', () => {
+  it('clear resets tree to empty state', () => {
+    const t = AVLTree.from([5, 3, 7, 1, 9, 2, 8, 4, 6]);
+    t.clear();
+    assert.equal(t.size, 0);
+    assert.equal(t.isEmpty(), true);
+    assert.equal(t.height(), 0);
+    assert.equal(t.min(), undefined);
+    assert.equal(t.max(), undefined);
+    assert.deepEqual(t.toArray(), []);
+    assert.equal(t.isValid(), true);
+  });
+
+  it('tree is reusable after clear', () => {
+    const t = AVLTree.from([5, 3, 7]);
+    t.clear();
+    t.insertAll([100, 50, 150]);
+    assert.equal(t.size, 3);
+    assert.deepEqual(t.toArray(), [50, 100, 150]);
+    assert.equal(t.isValid(), true);
   });
 });
