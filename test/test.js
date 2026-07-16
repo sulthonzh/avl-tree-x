@@ -770,6 +770,105 @@ describe('AVLTree — delete returns correct boolean', () => {
   });
 });
 
+describe('AVLTree — traversals on empty tree (internal null guards)', () => {
+  it('inOrder on empty tree returns empty array', () => {
+    const t = new AVLTree();
+    assert.deepEqual(t.inOrder(), []);
+  });
+
+  it('preOrder on empty tree returns empty array', () => {
+    const t = new AVLTree();
+    assert.deepEqual(t.preOrder(), []);
+  });
+
+  it('postOrder on empty tree returns empty array', () => {
+    const t = new AVLTree();
+    assert.deepEqual(t.postOrder(), []);
+  });
+
+  it('levelOrder on empty tree returns empty array', () => {
+    const t = new AVLTree();
+    assert.deepEqual(t.levelOrder(), []);
+  });
+
+  it('traversals with callback on empty tree do not throw', () => {
+    const t = new AVLTree();
+    const cb = () => { throw new Error('should not be called'); };
+    assert.doesNotThrow(() => t.inOrder(cb));
+    assert.doesNotThrow(() => t.preOrder(cb));
+    assert.doesNotThrow(() => t.postOrder(cb));
+    assert.doesNotThrow(() => t.levelOrder(cb));
+  });
+});
+
+describe('AVLTree — isValid detects corruption', () => {
+  it('detects AVL balance violation (height diff > 1)', () => {
+    // Craft a tree where left subtree height = 3, right = 1
+    const bad = AVLTree.fromJSON({
+      root: {
+        v: 20, h: 4,
+        l: {
+          v: 10, h: 3,
+          l: { v: 5, h: 2, l: { v: 1, h: 1, l: null, r: null }, r: null },
+          r: { v: 15, h: 1, l: null, r: null }
+        },
+        r: { v: 30, h: 1, l: null, r: null }
+      },
+      size: 5
+    });
+    assert.equal(bad.isValid(), false);
+  });
+
+  it('detects height mismatch (stored height != actual)', () => {
+    const bad = AVLTree.fromJSON({
+      root: {
+        v: 10, h: 99,
+        l: { v: 5, h: 1, l: null, r: null },
+        r: { v: 15, h: 1, l: null, r: null }
+      },
+      size: 3
+    });
+    assert.equal(bad.isValid(), false);
+  });
+
+  it('detects BST violation in left subtree (left child >= parent)', () => {
+    const bad = AVLTree.fromJSON({
+      root: {
+        v: 10, h: 2,
+        l: { v: 20, h: 1, l: null, r: null },
+        r: null
+      },
+      size: 2
+    });
+    assert.equal(bad.isValid(), false);
+  });
+
+  it('detects BST violation in right subtree (right child <= parent)', () => {
+    const bad = AVLTree.fromJSON({
+      root: {
+        v: 30, h: 2,
+        l: null,
+        r: { v: 10, h: 1, l: null, r: null }
+      },
+      size: 2
+    });
+    assert.equal(bad.isValid(), false);
+  });
+
+  it('detects deep corruption (propagates invalid from subtree)', () => {
+    // Build a valid tree, then corrupt a deep node
+    const valid = AVLTree.from([50, 25, 75, 10, 40, 60, 90]);
+    const json = valid.toJSON();
+    // Add a left child to 90 that has a larger value (BST violation deep in tree)
+    json.root.r.r.l = { v: 95, h: 1, l: null, r: null };
+    json.root.r.r.h = 2;
+    json.root.r.h = 3;
+    json.root.h = 4;
+    const bad = AVLTree.fromJSON(json);
+    assert.equal(bad.isValid(), false);
+  });
+});
+
 describe('AVLTree — clear and reuse after heavy operations', () => {
   it('clear resets tree to empty state', () => {
     const t = AVLTree.from([5, 3, 7, 1, 9, 2, 8, 4, 6]);
