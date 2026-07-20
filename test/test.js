@@ -891,3 +891,88 @@ describe('AVLTree — clear and reuse after heavy operations', () => {
     assert.equal(t.isValid(), true);
   });
 });
+
+describe('AVLTree — Coverage Gap Closures (2026-07-20)', () => {
+  it('predecessor when exact match found and left child has no right subtree', () => {
+    // Tree structure: [10, 30, 50, 20, 40]
+    // Predecessor of 20 is 10 (left child exists with no right child)
+    const t = AVLTree.from([10, 30, 50, 20, 40]);
+    assert.equal(t.predecessor(20), 10);
+  });
+
+  it('predecessor when exact match found and left child has multi-level right path', () => {
+    // Tree: [10, 30, 20, 25, 40]
+    // Predecessor of 30 is 25 (left child 20 has right child 25)
+    const t = AVLTree.from([10, 30, 20, 25, 40]);
+    assert.equal(t.predecessor(30), 25);
+  });
+
+  it('predecessor of exact match with deep left subtree', () => {
+    // Tree: [50, 30, 70, 20, 40, 60, 80, 10, 25, 35, 45, 55, 65, 75, 85]
+    // Predecessor of 50 is 45 (deep rightmost in left subtree)
+    const t = AVLTree.from([50, 30, 70, 20, 40, 60, 80, 10, 25, 35, 45, 55, 65, 75, 85]);
+    assert.equal(t.predecessor(50), 45);
+  });
+
+  it('successor when exact match found and right child has no left subtree', () => {
+    // Tree structure: [10, 30, 20, 40]
+    // Successor of 30 is 40 (right child exists with no left child)
+    const t = AVLTree.from([10, 30, 20, 40]);
+    assert.equal(t.successor(30), 40);
+  });
+
+  it('successor when exact match found and right child has multi-level left path', () => {
+    // Tree: [50, 30, 70, 40, 60, 80, 55]
+    // Successor of 50 is 55 (right child 60 has left child 55)
+    const t = AVLTree.from([50, 30, 70, 40, 60, 80, 55]);
+    assert.equal(t.successor(50), 55);
+  });
+
+  it('successor of exact match with deep right subtree', () => {
+    // Tree: [50, 30, 70, 20, 40, 60, 80, 55, 65, 75, 85, 52, 58]
+    // Successor of 50 is 52 (deep leftmost in right subtree)
+    const t = AVLTree.from([50, 30, 70, 20, 40, 60, 80, 55, 65, 75, 85, 52, 58]);
+    assert.equal(t.successor(50), 52);
+  });
+
+  it('select on empty tree returns undefined (internal selectNode null guard)', () => {
+    const t = new AVLTree();
+    assert.equal(t.select(0), undefined);
+  });
+
+  it('select(0) on single-element tree returns that element', () => {
+    const t = AVLTree.from([42]);
+    assert.equal(t.select(0), 42);
+  });
+
+  it('select after deleting all elements (internal recursion base case)', () => {
+    const t = AVLTree.from([10, 20, 30, 40, 50]);
+    // Delete all elements one by one
+    t.delete(10);
+    t.delete(20);
+    t.delete(30);
+    t.delete(40);
+    t.delete(50);
+    assert.equal(t.size, 0);
+    assert.equal(t.select(0), undefined);
+  });
+
+  it('delete on tree with rotations triggers deleteNode null base case', () => {
+    // Build a tree that requires rotations on delete
+    const t = AVLTree.from([10, 20, 30, 40, 50, 25, 35, 45]);
+    // Delete a node that triggers rotations and reaches null children in recursion
+    t.delete(30);
+    assert.equal(t.size, 7);
+    assert.ok(t.isValid());
+    assert.ok(!t.has(30));
+  });
+
+  it('height() returns correct value for non-null nodes (false branch coverage)', () => {
+    const t = AVLTree.from([50, 25, 75, 12, 37, 62, 87]);
+    // Height is called extensively internally, but this test ensures non-null paths are hit
+    assert.equal(t.height(), 3);
+    assert.equal(t.min(), 12);
+    assert.equal(t.max(), 87);
+    assert.ok(t.isValid());
+  });
+});
