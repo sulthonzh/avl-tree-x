@@ -353,7 +353,7 @@ describe('AVLTree — traversals with callback', () => {
 
   it('inOrder with callback does not return array', () => {
     const t = AVLTree.from([3, 1, 2]);
-    const result = t.inOrder((v) => {});
+    const result = t.inOrder((_v) => {});
     assert.equal(result, null);
   });
 });
