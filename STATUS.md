@@ -1,7 +1,8 @@
 # avl-tree-x — Status
 
 **Last audited:** 2026-07-16 19:10 UTC  
-**Re-audited:** 2026-08-01 (UTC 2026-08-01 17:59)
+**Re-audited:** 2026-08-01 (UTC 2026-08-01 17:59)  
+**Re-verified:** 2026-08-04 (UTC 2026-08-04 07:56)
 **Prior audits:** 2026-07-20 (coverage gap closures), 2026-07-16 (initial)  
 **Version:** 1.1.0  
 **Status:** ✅ EXCEPTIONAL
